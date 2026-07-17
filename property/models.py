@@ -69,7 +69,15 @@ class Flat(models.Model):
             self.new_building = False
 
         if self.owners_phonenumber:
-            self.owner_pure_phone = self.owners_phonenumber
+            from phonenumber_field.phonenumber import to_python
+            import phonenumbers
+            
+            phone_object = to_python(self.owners_phonenumber)
+            
+            if phone_object and phonenumbers.is_valid_number(phone_object):
+                self.owner_pure_phone = phone_object
+            else:
+                self.owner_pure_phone = None
         else:
             self.owner_pure_phone = None
             
