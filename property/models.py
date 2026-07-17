@@ -48,5 +48,13 @@ class Flat(models.Model):
         db_index=True)
     new_building = models.BooleanField('Новостройка', null=True, blank=True, db_index=True)
 
+    def save(self, *args, **kwargs):
+        if self.construction_year and self.construction_year >= 2015:
+            self.new_building = True
+        elif self.new_building is None:
+            self.new_building = False
+            
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.town}, {self.address} ({self.price}р.)'
