@@ -5,14 +5,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 
 class Flat(models.Model):
-    owner = models.CharField('ФИО владельца', max_length=200)
-    owners_phonenumber = models.CharField('Номер владельца', max_length=20)
-    owner_pure_phone = PhoneNumberField(
-        'Нормализованный номер владельца',
-        blank=True,
-        null=True,
-        db_index=True
-    )
     created_at = models.DateTimeField(
         'Когда создано объявление',
         default=timezone.now,
@@ -67,19 +59,6 @@ class Flat(models.Model):
             self.new_building = True
         elif self.new_building is None:
             self.new_building = False
-
-        if self.owners_phonenumber:
-            from phonenumber_field.phonenumber import to_python
-            import phonenumbers
-            
-            phone_object = to_python(self.owners_phonenumber)
-            
-            if phone_object and phonenumbers.is_valid_number(phone_object):
-                self.owner_pure_phone = phone_object
-            else:
-                self.owner_pure_phone = None
-        else:
-            self.owner_pure_phone = None
             
         super().save(*args, **kwargs)
 
@@ -107,12 +86,28 @@ class Owner(models.Model):
         'Нормализованный номер владельца',
         blank=True,
         null=True,
-        db_index=True
+        db_index=True,
+        region="RU",
     )
     flats = models.ManyToManyField(
-        Flat,
+        "Flat",
         related_name="flat_owners",
         blank=True,
         verbose_name="Квартиры в собственности",
-        )
-        
+    )
+
+    def save(self, *args, **kwargs):
+        if self.owners_phonenumber and not self.owner_pure_phone:
+            self.owner_pure_phone = self.owners_phonenumber
+
+        if self.owner_pure_phone:
+            if not self.owner_pure_phone.is_valid():
+                self.owner_pure_phone = None
+        else:
+            self.owner_pure_phone = None
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.owner 
+       
