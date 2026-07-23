@@ -4,30 +4,34 @@ from django.db import migrations
 from phonenumber_field.phonenumber import to_python
 import phonenumbers
 
+
 def normalize_owner_phones(apps, schema_editor):
-    Flat = apps.get_model('property', 'Flat')
-    
+    Flat = apps.get_model("property", "Flat")
+
     flats = Flat.objects.all()
-    
+
     for flat in flats.iterator():
         if flat.owners_phonenumber:
             phone_object = to_python(flat.owners_phonenumber)
-            
+
             if phone_object and phonenumbers.is_valid_number(phone_object):
                 flat.owner_pure_phone = phone_object
-                flat.save(update_fields=['owner_pure_phone'])
+                flat.save(update_fields=["owner_pure_phone"])
             else:
-                print(f"Квартира {flat.id}: номер '{flat.owners_phonenumber}' не существует в реальности!")
+                print(
+                    f"Квартира {flat.id}: номер '{flat.owners_phonenumber}' не существует в реальности!"
+                )
+
 
 def move_backward(apps, schema_editor):
-    Flat = apps.get_model('property', 'Flat')
+    Flat = apps.get_model("property", "Flat")
     Flat.objects.all().update(owner_pure_phone=None)
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('property', '0008_flat_owner_pure_phone'),
+        ("property", "0008_flat_owner_pure_phone"),
     ]
 
     operations = [

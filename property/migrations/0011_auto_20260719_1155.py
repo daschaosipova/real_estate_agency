@@ -4,11 +4,11 @@ from django.db import migrations
 
 
 def transfer_owners_data(apps, schema_editor):
-    Flat = apps.get_model('property', 'Flat')
-    Owner = apps.get_model('property', 'Owner')
+    Flat = apps.get_model("property", "Flat")
+    Owner = apps.get_model("property", "Owner")
 
     unique_flat_owners = Flat.objects.values_list(
-        'owner', 'owners_phonenumber', 'owner_pure_phone'
+        "owner", "owners_phonenumber", "owner_pure_phone"
     ).distinct()
 
     owners_to_create = []
@@ -17,34 +17,38 @@ def transfer_owners_data(apps, schema_editor):
             Owner(
                 owner=owner_name,
                 owners_phonenumber=phone,
-                owner_pure_phone=pure_phone
+                owner_pure_phone=pure_phone,
             )
         )
-    
+
     Owner.objects.bulk_create(owners_to_create, ignore_conflicts=True)
 
     owner_cache = {
-        (o.owner, o.owners_phonenumber): o.id 
-        for o in Owner.objects.only('id', 'owner', 'owners_phonenumber')
+        (o.owner, o.owners_phonenumber): o.id
+        for o in Owner.objects.only("id", "owner", "owners_phonenumber")
     }
 
     FlatOwnerRelation = Owner.flats.through
     relations_to_create = []
 
-    for flat in Flat.objects.only('id', 'owner', 'owners_phonenumber').iterator():
+    for flat in Flat.objects.only(
+        "id", "owner", "owners_phonenumber"
+    ).iterator():
         owner_id = owner_cache.get((flat.owner, flat.owners_phonenumber))
         if owner_id:
             relations_to_create.append(
                 FlatOwnerRelation(owner_id=owner_id, flat_id=flat.id)
             )
 
-    FlatOwnerRelation.objects.bulk_create(relations_to_create, batch_size=5000, ignore_conflicts=True)
+    FlatOwnerRelation.objects.bulk_create(
+        relations_to_create, batch_size=5000, ignore_conflicts=True
+    )
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('property', '0010_owner'),
+        ("property", "0010_owner"),
     ]
 
     operations = [
